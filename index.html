@@ -245,6 +245,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
     sfx.bgm.loop = true;
     sfx.bgm.volume = 0.4; 
+    let bgmStarted = false;
 
     // Helper for single sound triggers
     function playSound(audioNode) {
@@ -256,6 +257,14 @@ document.addEventListener("DOMContentLoaded", () => {
     function playClone(audioNode) {
         let clone = audioNode.cloneNode();
         clone.play().catch(e => console.log("Audio clone play failed:", e));
+    }
+
+    // Helper to ensure BGM starts exactly once upon user interaction
+    function ensureBGM() {
+        if (!bgmStarted) {
+            sfx.bgm.play().catch(e => console.log("BGM playback blocked by browser rules.", e));
+            bgmStarted = true;
+        }
     }
 
     // Context and DOM setup
@@ -392,6 +401,7 @@ document.addEventListener("DOMContentLoaded", () => {
         if ((e.code === 'Space' || e.key === ' ') && gameState !== 'PLAYING') {
             e.preventDefault(); 
             if (gameState === 'START' || gameState === 'GAMEOVER') {
+                ensureBGM();
                 playSound(sfx.btnClick);
                 startGame();
             }
@@ -429,12 +439,13 @@ document.addEventListener("DOMContentLoaded", () => {
     }, { passive: false });
 
     // Buttons
-    document.getElementById('start-btn').addEventListener('click', () => { playSound(sfx.btnClick); startGame(); });
-    document.getElementById('restart-btn').addEventListener('click', () => { playSound(sfx.btnClick); startGame(); });
-    document.getElementById('shop-btn-start').addEventListener('click', () => { playSound(sfx.btnClick); openShop(); });
-    document.getElementById('shop-btn-end').addEventListener('click', () => { playSound(sfx.btnClick); openShop(); });
+    document.getElementById('start-btn').addEventListener('click', () => { ensureBGM(); playSound(sfx.btnClick); startGame(); });
+    document.getElementById('restart-btn').addEventListener('click', () => { ensureBGM(); playSound(sfx.btnClick); startGame(); });
+    document.getElementById('shop-btn-start').addEventListener('click', () => { ensureBGM(); playSound(sfx.btnClick); openShop(); });
+    document.getElementById('shop-btn-end').addEventListener('click', () => { ensureBGM(); playSound(sfx.btnClick); openShop(); });
     
     document.getElementById('close-shop-btn').addEventListener('click', () => {
+        ensureBGM();
         playSound(sfx.btnClick);
         screens.shop.classList.add('hidden');
         if (previousGameState === 'START') {
@@ -459,9 +470,8 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     function startGame() {
-        // Trigger Audio Start Sequence
+        ensureBGM(); // Safety catch
         playSound(sfx.start);
-        sfx.bgm.play().catch(e => console.log("BGM playback blocked by browser rules.", e));
 
         score = 0;
         frameCount = 0;
@@ -509,9 +519,7 @@ document.addEventListener("DOMContentLoaded", () => {
     function gameOver() {
         gameState = 'GAMEOVER';
         
-        // Stop Music and Play Crash
-        sfx.bgm.pause();
-        sfx.bgm.currentTime = 0;
+        // Play Crash (BGM keeps playing uninterrupted)
         playSound(sfx.crash);
 
         boostActive = false;
@@ -1145,7 +1153,8 @@ document.addEventListener("DOMContentLoaded", () => {
         `;
         
         shieldDiv.addEventListener('click', () => {
-            playSound(sfx.btnClick); // SHOP BUTTON AUDIO
+            ensureBGM();
+            playSound(sfx.btnClick);
             if (!hasOneTimeShield && totalCoins >= 50) {
                 totalCoins -= 50;
                 localStorage.setItem('rocketCoins', totalCoins);
@@ -1215,7 +1224,8 @@ document.addEventListener("DOMContentLoaded", () => {
             `;
             
             div.addEventListener('click', () => {
-                playSound(sfx.btnClick); // SHOP BUTTON AUDIO
+                ensureBGM();
+                playSound(sfx.btnClick); 
                 if (isUnlocked) {
                     equippedColorId = item.id;
                     localStorage.setItem('rocketEquippedColor', equippedColorId);
