@@ -232,6 +232,32 @@
 
 <script>
 document.addEventListener("DOMContentLoaded", () => {
+    // --- AUDIO MANAGER ---
+    const sfx = {
+        bgm: new Audio('assets/BackgroundMusic.mp3'),
+        btnClick: new Audio('assets/ButtonClick.wav'),
+        coinCollect: new Audio('assets/CoinCollect.wav'),
+        crash: new Audio('assets/Crash.wav'),
+        shieldShatter: new Audio('assets/ShieldShatter.wav'),
+        start: new Audio('assets/Start.wav'),
+        warp: new Audio('assets/Warp.wav')
+    };
+
+    sfx.bgm.loop = true;
+    sfx.bgm.volume = 0.4; 
+
+    // Helper for single sound triggers
+    function playSound(audioNode) {
+        audioNode.currentTime = 0; 
+        audioNode.play().catch(e => console.log("Audio play failed:", e));
+    }
+
+    // Helper for overlapping rapid triggers (like coins)
+    function playClone(audioNode) {
+        let clone = audioNode.cloneNode();
+        clone.play().catch(e => console.log("Audio clone play failed:", e));
+    }
+
     // Context and DOM setup
     const canvas = document.getElementById('gameCanvas');
     const ctx = canvas.getContext('2d');
@@ -280,7 +306,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
     // State Variables
     let gameState = 'START'; 
-    let previousGameState = 'START'; // Tracks where the shop was opened from
+    let previousGameState = 'START';
     let score = 0;
     let frameCount = 0;
     
@@ -322,7 +348,7 @@ document.addEventListener("DOMContentLoaded", () => {
     
     let equippedColorId = localStorage.getItem('rocketEquippedColor') || 'white';
 
-    // Update Initial Displays (RESTORED)
+    // Update Initial Displays
     bestScoreDisplay.innerText = bestScore;
     bestHudDisplay.innerText = "Best: " + bestScore;
     totalCoinsDisplay.innerText = totalCoins;
@@ -365,7 +391,10 @@ document.addEventListener("DOMContentLoaded", () => {
         if (keys.hasOwnProperty(e.key)) keys[e.key] = true;
         if ((e.code === 'Space' || e.key === ' ') && gameState !== 'PLAYING') {
             e.preventDefault(); 
-            if (gameState === 'START' || gameState === 'GAMEOVER') startGame();
+            if (gameState === 'START' || gameState === 'GAMEOVER') {
+                playSound(sfx.btnClick);
+                startGame();
+            }
         }
     });
 
@@ -400,13 +429,13 @@ document.addEventListener("DOMContentLoaded", () => {
     }, { passive: false });
 
     // Buttons
-    document.getElementById('start-btn').addEventListener('click', startGame);
-    document.getElementById('restart-btn').addEventListener('click', startGame);
-    document.getElementById('shop-btn-start').addEventListener('click', openShop);
-    document.getElementById('shop-btn-end').addEventListener('click', openShop);
+    document.getElementById('start-btn').addEventListener('click', () => { playSound(sfx.btnClick); startGame(); });
+    document.getElementById('restart-btn').addEventListener('click', () => { playSound(sfx.btnClick); startGame(); });
+    document.getElementById('shop-btn-start').addEventListener('click', () => { playSound(sfx.btnClick); openShop(); });
+    document.getElementById('shop-btn-end').addEventListener('click', () => { playSound(sfx.btnClick); openShop(); });
     
-    // Fixed Close Shop Logic
     document.getElementById('close-shop-btn').addEventListener('click', () => {
+        playSound(sfx.btnClick);
         screens.shop.classList.add('hidden');
         if (previousGameState === 'START') {
             screens.start.classList.remove('hidden');
@@ -430,6 +459,10 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     function startGame() {
+        // Trigger Audio Start Sequence
+        playSound(sfx.start);
+        sfx.bgm.play().catch(e => console.log("BGM playback blocked by browser rules.", e));
+
         score = 0;
         frameCount = 0;
         currentSpeedMultiplier = 1;
@@ -475,6 +508,12 @@ document.addEventListener("DOMContentLoaded", () => {
 
     function gameOver() {
         gameState = 'GAMEOVER';
+        
+        // Stop Music and Play Crash
+        sfx.bgm.pause();
+        sfx.bgm.currentTime = 0;
+        playSound(sfx.crash);
+
         boostActive = false;
         shieldActive = false;
         oneTimeShieldActive = false;
@@ -679,7 +718,8 @@ document.addEventListener("DOMContentLoaded", () => {
                     oneTimeShieldActive = false; // Break it
                     planets.splice(i, 1);
                     
-                    // Trigger particle break animation
+                    playSound(sfx.shieldShatter); // SHIELD BREAK AUDIO
+                    
                     for(let k = 0; k < 15; k++) {
                         let angle = Math.random() * Math.PI * 2;
                         let speed = Math.random() * 5 + 2;
@@ -721,8 +761,10 @@ document.addEventListener("DOMContentLoaded", () => {
                     boostTimer = 180; 
                     shieldActive = true;
                     shieldTimer = 240; 
+                    playSound(sfx.warp); // WARP AUDIO
                 } else {
                     popups.push({ x: c.x, y: c.y, life: 60, alpha: 1.0, text: '+1', color: '#00ffff' });
+                    playClone(sfx.coinCollect); // CLONED COIN AUDIO FOR RAPID COLLECTS
                     if (runCoinsCollected % 10 === 9) { 
                         goldCoinQueued = true;
                     }
@@ -921,7 +963,6 @@ document.addEventListener("DOMContentLoaded", () => {
             ctx.globalAlpha = Math.max(0, p.life / p.maxLife);
             ctx.beginPath();
             ctx.moveTo(p.x, p.y);
-            // Draw a line stretching back along its velocity path to look like flying shards
             ctx.lineTo(p.x - p.vx * 1.5, p.y - p.vy * 1.5);
             ctx.stroke();
         });
@@ -1058,17 +1099,14 @@ document.addEventListener("DOMContentLoaded", () => {
         let rx = previewCanvas.width / 2;
         let ry = previewCanvas.height / 2 - 15;
         
-        // Toned-down, mostly static animation
         let time = Date.now();
         let subtleFlicker = (Math.sin(time / 150) + 1) / 2; 
         
-        // Solid thrust cone with barely any movement
         let outerLength = 45 + subtleFlicker * 3;
         let outerWidth = 12;
         let innerLength = 28 + subtleFlicker * 2;
         let innerWidth = 6;
 
-        // Draw Outer flame triangle
         previewCtx.fillStyle = `rgba(255, 100, 0, ${0.85 + subtleFlicker * 0.15})`;
         previewCtx.beginPath();
         previewCtx.moveTo(rx - outerWidth, ry + 36);
@@ -1077,7 +1115,6 @@ document.addEventListener("DOMContentLoaded", () => {
         previewCtx.closePath();
         previewCtx.fill();
         
-        // Draw Inner flame triangle
         previewCtx.fillStyle = `rgba(255, 255, 0, ${0.9 + subtleFlicker * 0.1})`;
         previewCtx.beginPath();
         previewCtx.moveTo(rx - innerWidth, ry + 36);
@@ -1086,17 +1123,16 @@ document.addEventListener("DOMContentLoaded", () => {
         previewCtx.closePath();
         previewCtx.fill();
 
-        // Draw the static rocket body
         drawRocket(previewCtx, rx, ry, 45, 75, equippedColorId, 0, false);
     }
 
     function renderShopItems() {
         shopItemsContainer.innerHTML = '';
         
-        // --- 1. RENDER SHIELD CONSUMABLE (Top Row, Span 2) ---
+        // --- 1. RENDER SHIELD CONSUMABLE ---
         const shieldDiv = document.createElement('div');
         shieldDiv.className = `shop-item ${hasOneTimeShield ? 'active' : ''}`;
-        shieldDiv.style.gridColumn = 'span 2'; // Takes up the whole double width row
+        shieldDiv.style.gridColumn = 'span 2'; 
         
         let shieldText = hasOneTimeShield ? 'Equipped (Next Run)' : '50 Coins';
         
@@ -1109,6 +1145,7 @@ document.addEventListener("DOMContentLoaded", () => {
         `;
         
         shieldDiv.addEventListener('click', () => {
+            playSound(sfx.btnClick); // SHOP BUTTON AUDIO
             if (!hasOneTimeShield && totalCoins >= 50) {
                 totalCoins -= 50;
                 localStorage.setItem('rocketCoins', totalCoins);
@@ -1125,14 +1162,12 @@ document.addEventListener("DOMContentLoaded", () => {
         });
         shopItemsContainer.appendChild(shieldDiv);
 
-        // Draw the rounded shield icon manually onto its small canvas
         const sCanvas = document.getElementById('shield-icon-canvas');
         if (sCanvas) {
             const sCtx = sCanvas.getContext('2d');
             sCtx.beginPath();
             sCtx.moveTo(17.5, 3);
             sCtx.lineTo(32, 8);
-            // Bezier curves naturally round the bottom halves out toward the center point
             sCtx.bezierCurveTo(32, 22, 25, 32, 17.5, 34);
             sCtx.bezierCurveTo(10, 32, 3, 22, 3, 8);
             sCtx.closePath();
@@ -1144,13 +1179,12 @@ document.addEventListener("DOMContentLoaded", () => {
             sCtx.stroke();
         }
 
-        // --- 2. RENDER COLOR UNLOCKS (Below Shield) ---
+        // --- 2. RENDER COLOR UNLOCKS ---
         shopColors.forEach((item, index) => {
             const isUnlocked = unlockedColors.includes(item.id);
             const isEquipped = equippedColorId === item.id;
             const isChrome = item.id === 'chrome';
             
-            // Check sequential unlocking
             const isPurchasable = isUnlocked || index === 0 || unlockedColors.includes(shopColors[index - 1].id);
             
             const div = document.createElement('div');
@@ -1181,6 +1215,7 @@ document.addEventListener("DOMContentLoaded", () => {
             `;
             
             div.addEventListener('click', () => {
+                playSound(sfx.btnClick); // SHOP BUTTON AUDIO
                 if (isUnlocked) {
                     equippedColorId = item.id;
                     localStorage.setItem('rocketEquippedColor', equippedColorId);
