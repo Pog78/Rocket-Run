@@ -266,6 +266,8 @@
                 <button id="toggle-sfx-btn" style="width: 250px;">SFX: ON</button>
             </div>
             <button id="close-settings-btn" style="margin-top: 20px;">Back</button>
+            <!-- SIGNATURE -->
+            <p style="position: absolute; bottom: 20px; font-size: 0.8rem; opacity: 0.5;">A Game by Pog</p>
         </div>
     </div>
 </div>
@@ -504,7 +506,7 @@ document.addEventListener("DOMContentLoaded", () => {
             screens.gameover.classList.remove('hidden');
             gameState = 'GAMEOVER';
         }
-        globalSettingsBtn.classList.remove('hidden'); // Show gear again
+        globalSettingsBtn.classList.remove('hidden'); 
     });
 
     // --- SETTINGS LOGIC ---
@@ -516,7 +518,7 @@ document.addEventListener("DOMContentLoaded", () => {
         document.getElementById('toggle-bgm-btn').innerText = `Music: ${musicEnabled ? 'ON' : 'OFF'}`;
         
         if (musicEnabled) {
-            playSound(sfx.btnClick); // Only clink if turning ON, so we know it works
+            playSound(sfx.btnClick); 
             if (bgmStarted) sfx.bgm.play().catch(e => console.log(e));
         } else {
             sfx.bgm.pause();
@@ -540,7 +542,7 @@ document.addEventListener("DOMContentLoaded", () => {
             screens.gameover.classList.remove('hidden');
             gameState = 'GAMEOVER';
         }
-        globalSettingsBtn.classList.remove('hidden'); // Show gear again
+        globalSettingsBtn.classList.remove('hidden');
     });
 
     function openSettings() {
@@ -551,7 +553,7 @@ document.addEventListener("DOMContentLoaded", () => {
         screens.start.classList.add('hidden');
         screens.gameover.classList.add('hidden');
         screens.settings.classList.remove('hidden');
-        globalSettingsBtn.classList.add('hidden'); // Hide gear while inside menu
+        globalSettingsBtn.classList.add('hidden');
         
         document.getElementById('toggle-bgm-btn').innerText = `Music: ${musicEnabled ? 'ON' : 'OFF'}`;
         document.getElementById('toggle-sfx-btn').innerText = `SFX: ${sfxEnabled ? 'ON' : 'OFF'}`;
@@ -610,7 +612,7 @@ document.addEventListener("DOMContentLoaded", () => {
         screens.gameover.classList.add('hidden');
         screens.shop.classList.add('hidden');
         screens.settings.classList.add('hidden');
-        globalSettingsBtn.classList.add('hidden'); // Hide gear while playing
+        globalSettingsBtn.classList.add('hidden'); 
         
         hud.classList.remove('hidden');
         bestHudDisplay.innerText = "Best: " + bestScore;
@@ -619,7 +621,6 @@ document.addEventListener("DOMContentLoaded", () => {
 
     function gameOver() {
         gameState = 'GAMEOVER';
-        
         playSound(sfx.crash);
 
         boostActive = false;
@@ -635,7 +636,7 @@ document.addEventListener("DOMContentLoaded", () => {
         
         hud.classList.add('hidden');
         screens.gameover.classList.remove('hidden');
-        globalSettingsBtn.classList.remove('hidden'); // Show gear again
+        globalSettingsBtn.classList.remove('hidden');
         
         finalScoreDisplay.innerText = Math.floor(score);
         bestScoreDisplay.innerText = bestScore;
@@ -818,18 +819,14 @@ document.addEventListener("DOMContentLoaded", () => {
 
             const dist = Math.hypot(p.x - rocket.x, p.y - rocket.y);
             if (dist < p.radius + rocket.w / 2 - 5) {
-                // Check Warp shield first
                 if (shieldActive) { 
                     score += 50; 
                     planets.splice(i, 1);
                 } 
-                // Check 1-time consumable shield next
                 else if (oneTimeShieldActive) {
-                    oneTimeShieldActive = false; // Break it
+                    oneTimeShieldActive = false; 
                     planets.splice(i, 1);
-                    
-                    playSound(sfx.shieldShatter); // SHIELD BREAK AUDIO
-                    
+                    playSound(sfx.shieldShatter); 
                     for(let k = 0; k < 15; k++) {
                         let angle = Math.random() * Math.PI * 2;
                         let speed = Math.random() * 5 + 2;
@@ -844,7 +841,6 @@ document.addEventListener("DOMContentLoaded", () => {
                         });
                     }
                 }
-                // No shield, game over
                 else {
                     gameOver();
                 }
@@ -871,10 +867,10 @@ document.addEventListener("DOMContentLoaded", () => {
                     boostTimer = 180; 
                     shieldActive = true;
                     shieldTimer = 240; 
-                    playSound(sfx.warp); // WARP AUDIO
+                    playSound(sfx.warp); 
                 } else {
                     popups.push({ x: c.x, y: c.y, life: 60, alpha: 1.0, text: '+1', color: '#00ffff' });
-                    playClone(sfx.coinCollect); // CLONED COIN AUDIO FOR RAPID COLLECTS
+                    playClone(sfx.coinCollect); 
                     if (runCoinsCollected % 10 === 9) { 
                         goldCoinQueued = true;
                     }
@@ -924,7 +920,6 @@ document.addEventListener("DOMContentLoaded", () => {
         drawPlanets();
         drawCoins();
         drawTrail(ctx);
-        // Visual aura applied if EITHER shield is currently active
         drawRocket(ctx, rocket.x, rocket.y, rocket.w, rocket.h, equippedColorId, rocket.angle, shieldActive || oneTimeShieldActive);
         drawParticles();
         drawPopups();
@@ -1197,7 +1192,7 @@ document.addEventListener("DOMContentLoaded", () => {
         screens.start.classList.add('hidden');
         screens.gameover.classList.add('hidden');
         screens.shop.classList.remove('hidden');
-        globalSettingsBtn.classList.add('hidden'); // Hide gear while inside shop
+        globalSettingsBtn.classList.add('hidden'); 
         shopCoinsDisplay.innerText = totalCoins;
         
         renderShopItems();
@@ -1240,7 +1235,6 @@ document.addEventListener("DOMContentLoaded", () => {
     function renderShopItems() {
         shopItemsContainer.innerHTML = '';
         
-        // --- 1. RENDER SHIELD CONSUMABLE ---
         const shieldDiv = document.createElement('div');
         shieldDiv.className = `shop-item ${hasOneTimeShield ? 'active' : ''}`;
         shieldDiv.style.gridColumn = 'span 2'; 
@@ -1290,7 +1284,6 @@ document.addEventListener("DOMContentLoaded", () => {
             sCtx.stroke();
         }
 
-        // --- 2. RENDER COLOR UNLOCKS ---
         shopColors.forEach((item, index) => {
             const isUnlocked = unlockedColors.includes(item.id);
             const isEquipped = equippedColorId === item.id;
