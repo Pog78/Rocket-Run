@@ -108,6 +108,27 @@
             box-shadow: 0 0 15px white;
         }
 
+        /* Settings Gear Button */
+        .settings-icon {
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            font-size: 2rem;
+            padding: 5px 10px;
+            margin: 0;
+            border: none;
+            background: transparent;
+            text-shadow: 0 0 10px rgba(255, 255, 255, 0.5);
+            z-index: 20;
+        }
+        
+        .settings-icon:hover {
+            background: rgba(255, 255, 255, 0.1);
+            box-shadow: none;
+            border: none;
+            color: white;
+        }
+
         /* HUD */
         #hud {
             position: absolute;
@@ -203,6 +224,7 @@
         </div>
 
         <div id="start-screen" class="screen">
+            <button id="settings-btn-start" class="settings-icon">⚙️</button>
             <h1>Rocket Run</h1>
             <p>Best Score: <span id="best-score-display">0</span></p>
             <p style="color: #00ffff; text-shadow: 0 0 5px #00ffff;">Total Coins: <span id="total-coins-display">0</span></p>
@@ -211,6 +233,7 @@
         </div>
 
         <div id="game-over-screen" class="screen hidden">
+            <button id="settings-btn-end" class="settings-icon">⚙️</button>
             <h1 style="color: #ff4444; text-shadow: 0 0 10px #ff4444;">GAME OVER</h1>
             <p>Score: <span id="final-score">0</span></p>
             <p style="color: #aaaaaa; font-size: 1rem; margin-top: -15px;">Best: <span id="game-over-best-score">0</span></p>
@@ -226,6 +249,15 @@
             </div>
             <div id="shop-items"></div>
             <button id="close-shop-btn" style="margin-top: 20px;">Back</button>
+        </div>
+
+        <div id="settings-screen" class="screen hidden">
+            <h1>SETTINGS</h1>
+            <div style="display: flex; flex-direction: column; gap: 15px; margin: 20px 0;">
+                <button id="toggle-bgm-btn" style="width: 250px;">Music: ON</button>
+                <button id="toggle-sfx-btn" style="width: 250px;">SFX: ON</button>
+            </div>
+            <button id="close-settings-btn" style="margin-top: 20px;">Back</button>
         </div>
     </div>
 </div>
@@ -247,21 +279,27 @@ document.addEventListener("DOMContentLoaded", () => {
     sfx.bgm.volume = 0.4; 
     let bgmStarted = false;
 
+    // Load Settings
+    let musicEnabled = localStorage.getItem('rocketMusic') !== 'false';
+    let sfxEnabled = localStorage.getItem('rocketSFX') !== 'false';
+
     // Helper for single sound triggers
     function playSound(audioNode) {
+        if (!sfxEnabled) return; 
         audioNode.currentTime = 0; 
         audioNode.play().catch(e => console.log("Audio play failed:", e));
     }
 
     // Helper for overlapping rapid triggers (like coins)
     function playClone(audioNode) {
+        if (!sfxEnabled) return;
         let clone = audioNode.cloneNode();
         clone.play().catch(e => console.log("Audio clone play failed:", e));
     }
 
     // Helper to ensure BGM starts exactly once upon user interaction
     function ensureBGM() {
-        if (!bgmStarted) {
+        if (!bgmStarted && musicEnabled) {
             sfx.bgm.play().catch(e => console.log("BGM playback blocked by browser rules.", e));
             bgmStarted = true;
         }
@@ -277,7 +315,8 @@ document.addEventListener("DOMContentLoaded", () => {
     const screens = {
         start: document.getElementById('start-screen'),
         gameover: document.getElementById('game-over-screen'),
-        shop: document.getElementById('shop-screen')
+        shop: document.getElementById('shop-screen'),
+        settings: document.getElementById('settings-screen')
     };
     
     const hud = document.getElementById('hud');
@@ -457,6 +496,56 @@ document.addEventListener("DOMContentLoaded", () => {
         }
     });
 
+    // --- SETTINGS LOGIC ---
+    document.getElementById('settings-btn-start').addEventListener('click', openSettings);
+    document.getElementById('settings-btn-end').addEventListener('click', openSettings);
+    
+    document.getElementById('toggle-bgm-btn').addEventListener('click', () => {
+        playSound(sfx.btnClick);
+        musicEnabled = !musicEnabled;
+        localStorage.setItem('rocketMusic', musicEnabled);
+        document.getElementById('toggle-bgm-btn').innerText = `Music: ${musicEnabled ? 'ON' : 'OFF'}`;
+        
+        if (musicEnabled) {
+            if (bgmStarted) sfx.bgm.play().catch(e => console.log(e));
+        } else {
+            sfx.bgm.pause();
+        }
+    });
+
+    document.getElementById('toggle-sfx-btn').addEventListener('click', () => {
+        sfxEnabled = !sfxEnabled;
+        localStorage.setItem('rocketSFX', sfxEnabled);
+        document.getElementById('toggle-sfx-btn').innerText = `SFX: ${sfxEnabled ? 'ON' : 'OFF'}`;
+        if (sfxEnabled) playSound(sfx.btnClick); // Play immediately so they know it worked
+    });
+
+    document.getElementById('close-settings-btn').addEventListener('click', () => {
+        playSound(sfx.btnClick);
+        screens.settings.classList.add('hidden');
+        if (previousGameState === 'START') {
+            screens.start.classList.remove('hidden');
+            gameState = 'START';
+        } else {
+            screens.gameover.classList.remove('hidden');
+            gameState = 'GAMEOVER';
+        }
+    });
+
+    function openSettings() {
+        playSound(sfx.btnClick);
+        previousGameState = gameState;
+        gameState = 'SETTINGS';
+        
+        screens.start.classList.add('hidden');
+        screens.gameover.classList.add('hidden');
+        screens.settings.classList.remove('hidden');
+        
+        // Sync button text to actual state
+        document.getElementById('toggle-bgm-btn').innerText = `Music: ${musicEnabled ? 'ON' : 'OFF'}`;
+        document.getElementById('toggle-sfx-btn').innerText = `SFX: ${sfxEnabled ? 'ON' : 'OFF'}`;
+    }
+
     function initStars() {
         stars = [];
         for (let i = 0; i < 100; i++) {
@@ -470,7 +559,7 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     function startGame() {
-        ensureBGM(); // Safety catch
+        ensureBGM(); 
         playSound(sfx.start);
 
         score = 0;
@@ -510,6 +599,7 @@ document.addEventListener("DOMContentLoaded", () => {
         screens.start.classList.add('hidden');
         screens.gameover.classList.add('hidden');
         screens.shop.classList.add('hidden');
+        screens.settings.classList.add('hidden');
         
         hud.classList.remove('hidden');
         bestHudDisplay.innerText = "Best: " + bestScore;
@@ -519,7 +609,7 @@ document.addEventListener("DOMContentLoaded", () => {
     function gameOver() {
         gameState = 'GAMEOVER';
         
-        // Play Crash (BGM keeps playing uninterrupted)
+        // Play Crash (BGM keeps playing uninterrupted if enabled)
         playSound(sfx.crash);
 
         boostActive = false;
@@ -1153,7 +1243,6 @@ document.addEventListener("DOMContentLoaded", () => {
         `;
         
         shieldDiv.addEventListener('click', () => {
-            ensureBGM();
             playSound(sfx.btnClick);
             if (!hasOneTimeShield && totalCoins >= 50) {
                 totalCoins -= 50;
@@ -1224,7 +1313,6 @@ document.addEventListener("DOMContentLoaded", () => {
             `;
             
             div.addEventListener('click', () => {
-                ensureBGM();
                 playSound(sfx.btnClick); 
                 if (isUnlocked) {
                     equippedColorId = item.id;
