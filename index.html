@@ -457,12 +457,12 @@ document.addEventListener("DOMContentLoaded", () => {
     totalCoinsDisplay.innerText = totalCoins;
     gameOverBestScoreDisplay.innerText = bestScore;
 
-    // ROCKET INITIALIZATION: Increased the base offset to 250
+    // ROCKET INITIALIZATION: Increased the base offset to 230
     const rocket = {
         w: 36,
         h: 60,
         x: container.clientWidth / 2 || 200,
-        y: container.clientHeight - 250 || 400,
+        y: container.clientHeight - 230 || 400,
         targetX: container.clientWidth / 2 || 200,
         angle: 0,
         trail: []
@@ -471,12 +471,12 @@ document.addEventListener("DOMContentLoaded", () => {
     let stars = [], planets = [], coins = [], popups = [], particles = []; 
     const keys = { ArrowLeft: false, ArrowRight: false, a: false, d: false };
 
-    // RESIZE EVENT: Increased the base offset to 250
+    // RESIZE EVENT: Increased the base offset to 230
     function resize() {
         canvas.width = container.clientWidth || window.innerWidth;
         canvas.height = container.clientHeight || window.innerHeight;
         if (rocket && rocket.y > canvas.height - 200) {
-            rocket.y = canvas.height - 250;
+            rocket.y = canvas.height - 230;
         }
     }
     window.addEventListener('resize', () => setTimeout(resize, 50));
@@ -599,7 +599,7 @@ document.addEventListener("DOMContentLoaded", () => {
         }
     }
 
-    // START GAME: Increased the base offset to 250
+    // START GAME: Increased the base offset to 230
     function startGame() {
         ensureBGM(); 
         playSFX('start');
@@ -620,7 +620,7 @@ document.addEventListener("DOMContentLoaded", () => {
         planets = []; coins = []; popups = []; particles = []; rocket.trail = [];
         
         rocket.x = canvas.width / 2; rocket.targetX = canvas.width / 2;
-        rocket.y = canvas.height - 250; rocket.angle = 0;
+        rocket.y = canvas.height - 230; rocket.angle = 0;
         
         gameState = 'PLAYING';
         
