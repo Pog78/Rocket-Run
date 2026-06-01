@@ -9,7 +9,7 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <link rel="apple-touch-icon" href="assets/app-icon.png">
     <link rel="icon" type="image/png" href="assets/app-icon.png">
-    
+    <link rel="manifest" href="manifest.json">
     <title>Rocket Run</title>
     <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700;900&display=swap" rel="stylesheet">
     <style>
@@ -1159,6 +1159,19 @@ document.addEventListener("DOMContentLoaded", () => {
 
     initStars(); requestAnimationFrame(mainLoop); 
 });
+</script>
+    <script>
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+      navigator.serviceWorker.register('sw.js')
+        .then(registration => {
+          console.log('ServiceWorker registered successfully with scope: ', registration.scope);
+        })
+        .catch(error => {
+          console.log('ServiceWorker registration failed: ', error);
+        });
+    });
+  }
 </script>
 </body>
 </html>
